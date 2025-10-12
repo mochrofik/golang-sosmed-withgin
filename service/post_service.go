@@ -20,6 +20,7 @@ const uploadDir = "./storage/images/"
 
 type PostService interface {
 	Posting(req *dto.PostRequest) error
+	MyPost(userId int) *[]dto.MyPost
 }
 
 type postService struct {
@@ -102,7 +103,7 @@ func (s *postService) Posting(req *dto.PostRequest) error {
 			result := s.repository.UploadFiles(&uploads)
 
 			if result != nil {
-				return &errorhandler.InternalServerError{Message: err.Error()}
+				return &errorhandler.InternalServerError{Message: result.Error()}
 
 			}
 
@@ -111,4 +112,42 @@ func (s *postService) Posting(req *dto.PostRequest) error {
 	}
 
 	return nil
+}
+
+func (s *postService) MyPost(userID int) *[]dto.MyPost {
+
+	var post []dto.MyPost
+
+	result := s.repository.MyPost(userID)
+
+	for _, v := range *result {
+
+		var files []dto.FilePosting
+
+		for _, file := range v.UploadPostings {
+
+			files = append(files, dto.FilePosting{
+				ID:      file.ID,
+				FileUrl: file.FileUrl,
+				Format:  file.Format,
+			})
+		}
+
+		post = append(post, dto.MyPost{
+			ID:             v.ID,
+			Posting:        v.Posting,
+			UploadPostings: files,
+			UserID:         v.UserID,
+			User: dto.User{
+				ID:    v.UserID,
+				Name:  v.User.Name,
+				Email: v.User.Email,
+			},
+			CreatedAt: helper.FormatDateTimeToString(v.CreatedAt),
+			UpdatedAt: helper.FormatDateTimeToString(v.UpdatedAt),
+		})
+
+	}
+
+	return &post
 }

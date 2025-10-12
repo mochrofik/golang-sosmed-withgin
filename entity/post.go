@@ -3,12 +3,14 @@ package entity
 import "time"
 
 type Post struct {
-	ID         int
-	UserID     int
-	Posting    string
-	PictureUrl *string
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID             int
+	UserID         int
+	User           User `gorm:"foreignKey:user_id" json:"user"`
+	Posting        string
+	PictureUrl     *string
+	UploadPostings []UploadPosting `gorm:"foreignKey:PostID"`
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 type UploadPosting struct {

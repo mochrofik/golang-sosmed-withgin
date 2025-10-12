@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 func FormatFile(fileBytes []byte, fileHeader *multipart.FileHeader) string {
@@ -31,4 +32,9 @@ func FormatFile(fileBytes []byte, fileHeader *multipart.FileHeader) string {
 
 	return formatExtension
 
+}
+
+func FormatDateTimeToString(t time.Time) string {
+	const datetimeFormat = "2006-01-02 15:04:05"
+	return t.Format(datetimeFormat)
 }

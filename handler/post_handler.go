@@ -44,3 +44,21 @@ func (h *postHandler) Posting(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, res)
 }
+
+func (h *postHandler) MyPost(c *gin.Context) {
+
+	userID, _ := c.Get("UserID")
+
+	idInt := userID.(int)
+
+	post := h.service.MyPost(idInt)
+
+	res := helper.Response(dto.ResponseParams{
+		StatusCode: http.StatusCreated,
+		Message:    "My posts",
+		Data:       post,
+	})
+
+	c.JSON(http.StatusCreated, res)
+
+}

@@ -10,6 +10,7 @@ type PostRepository interface {
 	Posting(req *entity.Post) (*entity.Post, error)
 	UserExist(id int) bool
 	UploadFiles(req *entity.UploadPosting) error
+	MyPost(userId int) *[]entity.Post
 }
 
 type postRepository struct {
@@ -41,4 +42,13 @@ func (r *postRepository) UserExist(id int) bool {
 	err := r.db.First(&user, "id = ?", id).Error
 
 	return err == nil
+}
+
+func (r *postRepository) MyPost(userId int) *[]entity.Post {
+
+	var posting []entity.Post
+
+	r.db.Preload("UploadPostings").Joins("User").Find(&posting, "user_id", userId)
+
+	return &posting
 }

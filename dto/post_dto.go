@@ -1,6 +1,8 @@
 package dto
 
-import "mime/multipart"
+import (
+	"mime/multipart"
+)
 
 type PostResponse struct {
 	ID         int    `json:"id"`
@@ -22,4 +24,22 @@ type User struct {
 	ID    int    `json:"id"`
 	Name  string `json:"name"`
 	Email string `json:"email"`
+}
+
+type MyPost struct {
+	ID             int
+	UserID         int           `json:"-"`
+	User           User          `gorm:"foreignKey:UserID" json:"user"`
+	Posting        string        `json:"posting"`
+	UploadPostings []FilePosting `gorm:"foreignKey:PostID" json:"upload_postings"`
+	CreatedAt      string        `json:"created_at"`
+	UpdatedAt      string        `json:"updated_at"`
+}
+
+type FilePosting struct {
+	ID int
+	// PostID  int    `json:"post_id"`
+	// Post    MyPost `gorm:"foreignKey:post_id" json:"post"`
+	FileUrl *string `json:"file_url"`
+	Format  *string `json:"format"`
 }
