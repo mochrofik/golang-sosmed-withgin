@@ -1,8 +1,11 @@
 package repository
 
 import (
+	"fmt"
 	"golang-sosmed-gin/entity"
+	"os"
 
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -11,6 +14,7 @@ type PostRepository interface {
 	UserExist(id int) bool
 	UploadFiles(req *entity.UploadPosting) error
 	MyPost(userId int) *[]entity.Post
+	DeletePost(ID int) error
 }
 
 type postRepository struct {
@@ -51,4 +55,41 @@ func (r *postRepository) MyPost(userId int) *[]entity.Post {
 	r.db.Preload("UploadPostings").Joins("User").Find(&posting, "user_id", userId)
 
 	return &posting
+}
+
+func (r *postRepository) DeletePost(ID int) error {
+	var post *entity.Post
+	var uploads []entity.UploadPosting
+
+	err3 := r.db.Find(&uploads, "post_id", ID).Error
+	if err3 != nil {
+		return err3
+	}
+
+	logrus.Println("uploads")
+
+	for _, v := range uploads {
+		logrus.Println(*v.FileUrl)
+
+		filePath := "./" + *v.FileUrl
+
+		err1 := os.Remove(filePath)
+		if err1 != nil {
+			if os.IsNotExist(err1) {
+				return fmt.Errorf("file tidak ditemukan di path: %s", filePath)
+			}
+			return fmt.Errorf("gagal menghapus file %s: %w", filePath, err1)
+		}
+	}
+
+	resultComments := r.db.Where("post_id = ?", ID).Delete(&entity.UploadPosting{})
+
+	if resultComments.Error != nil {
+		return fmt.Errorf("gagal menghapus file: %w", resultComments.Error)
+	}
+
+	err2 := r.db.Delete(&post, ID).Error
+
+	return err2
+
 }

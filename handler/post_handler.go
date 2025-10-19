@@ -6,6 +6,7 @@ import (
 	"golang-sosmed-gin/helper"
 	"golang-sosmed-gin/service"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -54,11 +55,34 @@ func (h *postHandler) MyPost(c *gin.Context) {
 	post := h.service.MyPost(idInt)
 
 	res := helper.Response(dto.ResponseParams{
-		StatusCode: http.StatusCreated,
+		StatusCode: http.StatusOK,
 		Message:    "My posts",
 		Data:       post,
 	})
 
-	c.JSON(http.StatusCreated, res)
+	c.JSON(http.StatusOK, res)
+}
 
+func (h *postHandler) DeletePost(c *gin.Context) {
+
+	postID := c.Param("id")
+	idInt, err := strconv.Atoi(postID)
+
+	if err != nil {
+		errorhandler.HandleError(c, &errorhandler.BadRequestError{Message: "handler " + err.Error()})
+		return
+	}
+
+	erro := h.service.DeletePost(idInt)
+	if erro != nil {
+		errorhandler.HandleError(c, &errorhandler.BadRequestError{Message: "handler " + erro.Error()})
+		return
+	}
+
+	res := helper.Response(dto.ResponseParams{
+		StatusCode: http.StatusOK,
+		Message:    "Delete successfully",
+	})
+
+	c.JSON(http.StatusOK, res)
 }

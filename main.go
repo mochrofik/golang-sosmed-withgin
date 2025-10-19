@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"golang-sosmed-gin/config"
-	"golang-sosmed-gin/entity"
 	"golang-sosmed-gin/router"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,9 +14,13 @@ func main() {
 	config.LoadConfig()
 	config.ConnectDB()
 
-	config.DB.AutoMigrate(entity.LikePosting{})
+	const imageDir = "./storage"
+
+	// config.DB.AutoMigrate(entity.User{}, entity.Post{}, entity.UploadPosting{}, entity.LikePosting{})
 
 	r := gin.Default()
+	r.StaticFS("/storage", http.Dir(imageDir))
+
 	api := r.Group("/api")
 
 	api.GET("/ping", func(c *gin.Context) {

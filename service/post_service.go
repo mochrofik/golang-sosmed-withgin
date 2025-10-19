@@ -11,9 +11,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 const uploadDir = "./storage/images/"
@@ -21,6 +20,7 @@ const uploadDir = "./storage/images/"
 type PostService interface {
 	Posting(req *dto.PostRequest) error
 	MyPost(userId int) *[]dto.MyPost
+	DeletePost(ID int) error
 }
 
 type postService struct {
@@ -33,10 +33,8 @@ func NewPostService(r repository.PostRepository) *postService {
 	}
 }
 
-const MAX_FILE_SIZE = 10 << 20 // 10MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 func (s *postService) Posting(req *dto.PostRequest) error {
-	logrus.Println("request")
-	logrus.Println(req)
 
 	if userExist := s.repository.UserExist(req.UserID); !userExist {
 		return &errorhandler.BadRequestError{Message: "User not found"}
@@ -67,6 +65,9 @@ func (s *postService) Posting(req *dto.PostRequest) error {
 			}
 
 			defer src.Close()
+			if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
+				os.MkdirAll(uploadDir, 0755)
+			}
 			fileBytes := make([]byte, 512)
 
 			_, err = src.Read(fileBytes)
@@ -74,23 +75,24 @@ func (s *postService) Posting(req *dto.PostRequest) error {
 				return &errorhandler.BadRequestError{Message: "gagal membaca byte file: " + err.Error()}
 			}
 			mimeType := helper.FormatFile(fileBytes, fileHeader)
-			// Buat nama file unik dan path tujuan
-			fileName := fmt.Sprintf("%d_%s", time.Now().Unix(), fileHeader.Filename)
-			imagePath = filepath.Join(uploadDir, fileName)
-
-			if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
-				os.MkdirAll(uploadDir, 0755)
+			if _, seekErr := src.Seek(0, io.SeekStart); seekErr != nil {
+				return &errorhandler.BadRequestError{Message: "gagal memutar ulang file stream: " + seekErr.Error()}
 			}
 
-			dst, err := os.Create(imagePath)
+			extension := filepath.Ext(fileHeader.Filename)
+			originalBaseName := strings.TrimSuffix(fileHeader.Filename, extension)
+			cleanedBaseName := strings.ReplaceAll(originalBaseName, " ", "_")
+			fileName := fmt.Sprintf("%s_%d%s", cleanedBaseName, time.Now().UnixMilli(), extension)
+			imagePath = filepath.Join(uploadDir, fileName)
+
+			newFile, err := os.Create(imagePath)
 			if err != nil {
 				return &errorhandler.BadRequestError{Message: "failed to create storage file: " + err.Error()}
 			}
-			defer dst.Close()
+			defer newFile.Close()
 
 			// Salin konten
-			if _, err := io.Copy(dst, src); err != nil {
-				os.Remove(imagePath) // Bersihkan jika gagal copy
+			if _, err := io.Copy(newFile, src); err != nil {
 				return &errorhandler.BadRequestError{Message: "failed to save file content: " + err.Error()}
 			}
 
@@ -150,4 +152,10 @@ func (s *postService) MyPost(userID int) *[]dto.MyPost {
 	}
 
 	return &post
+}
+
+func (s *postService) DeletePost(ID int) error {
+
+	err := s.repository.DeletePost(ID)
+	return err
 }

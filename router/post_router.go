@@ -23,4 +23,5 @@ func PostRouter(api *gin.RouterGroup) {
 
 	r.POST("/", postHandler.Posting)
 	r.GET("/my-post", postHandler.MyPost)
+	r.DELETE("/delete/:id", postHandler.DeletePost)
 }
