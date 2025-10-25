@@ -22,6 +22,7 @@ func PostRouter(api *gin.RouterGroup) {
 	r.Use(middleware.JWTMiddleware())
 
 	r.POST("/", postHandler.Posting)
+	r.POST("/liked", postHandler.LikePost)
 	r.GET("/my-post", postHandler.MyPost)
 	r.DELETE("/delete/:id", postHandler.DeletePost)
 }

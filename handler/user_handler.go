@@ -74,3 +74,36 @@ func (h *userHandler) MyProfile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, res)
 }
+
+func (h *userHandler) EditProfile(c *gin.Context) {
+
+	var user dto.ProfileRequest
+
+	userID, _ := c.Get("UserID")
+
+	user.UserID = userID.(int)
+
+	if err := c.ShouldBind(&user); err != nil {
+		errorhandler.HandleError(c, &errorhandler.BadRequestError{Message: "handler " + err.Error()})
+		return
+	}
+
+	err := h.service.EditProfile(&user)
+	var res any
+
+	if err != nil {
+		res = helper.Response(dto.ResponseParams{
+			StatusCode: http.StatusBadRequest,
+			Message:    err.Error(),
+		})
+		c.JSON(http.StatusBadRequest, res)
+
+	} else {
+		res = helper.Response(dto.ResponseParams{
+			StatusCode: http.StatusCreated,
+			Message:    "Profile update successfully",
+		})
+		c.JSON(http.StatusCreated, res)
+	}
+
+}

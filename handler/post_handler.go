@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 type postHandler struct {
@@ -85,4 +86,31 @@ func (h *postHandler) DeletePost(c *gin.Context) {
 	})
 
 	c.JSON(http.StatusOK, res)
+}
+
+func (h *postHandler) LikePost(c *gin.Context) {
+
+	userID, _ := c.Get("UserID")
+	postID := c.PostForm("post_id")
+
+	logrus.Info("post", postID)
+	idInt := userID.(int)
+	postInt, _ := strconv.Atoi(postID)
+
+	post := h.service.LikePost(postInt, idInt)
+	var message string = "Success Like or Unlike"
+
+	var statusCode int = 201
+
+	if post != nil {
+		statusCode = http.StatusNotFound
+		message = post.Error()
+	}
+
+	res := helper.Response(dto.ResponseParams{
+		StatusCode: statusCode,
+		Message:    message,
+	})
+
+	c.JSON(statusCode, res)
 }

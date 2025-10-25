@@ -21,5 +21,7 @@ func UserRouter(api *gin.RouterGroup) {
 	r.Use(middleware.JWTMiddleware())
 
 	r.GET("/all", authHandler.GetAllUser)
+	r.GET("/my-profile", authHandler.MyProfile)
+	r.POST("/edit-profile", authHandler.EditProfile)
 
 }

@@ -21,6 +21,7 @@ type PostService interface {
 	Posting(req *dto.PostRequest) error
 	MyPost(userId int) *[]dto.MyPost
 	DeletePost(ID int) error
+	LikePost(PostID int, UserID int) error
 }
 
 type postService struct {
@@ -157,5 +158,17 @@ func (s *postService) MyPost(userID int) *[]dto.MyPost {
 func (s *postService) DeletePost(ID int) error {
 
 	err := s.repository.DeletePost(ID)
+	return err
+}
+
+func (s *postService) LikePost(PostID int, UserID int) error {
+
+	var err error
+	if Exist := s.repository.CheckLike(PostID, UserID); Exist {
+		err = s.repository.LikePost(PostID, UserID, false)
+	} else {
+		err = s.repository.LikePost(PostID, UserID, true)
+	}
+
 	return err
 }

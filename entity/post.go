@@ -32,5 +32,5 @@ type LikePosting struct {
 	Like      int
 	Dislike   int
 	CreatedAt time.Time
-	UpdateAt  time.Time
+	UpdatedAt time.Time
 }

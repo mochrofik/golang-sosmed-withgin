@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"golang-sosmed-gin/entity"
 	"os"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -15,6 +16,8 @@ type PostRepository interface {
 	UploadFiles(req *entity.UploadPosting) error
 	MyPost(userId int) *[]entity.Post
 	DeletePost(ID int) error
+	LikePost(PostID int, UserID int, isLike bool) error
+	CheckLike(PostID int, UserID int) bool
 }
 
 type postRepository struct {
@@ -92,4 +95,48 @@ func (r *postRepository) DeletePost(ID int) error {
 
 	return err2
 
+}
+
+func (r *postRepository) LikePost(PostID int, UserID int, isLike bool) error {
+	var likePost entity.LikePosting
+
+	if !isLike {
+		newValue := map[string]interface{}{
+			"like":       0,
+			"dislike":    0,
+			"updated_at": time.Now()}
+		err := r.db.Model(&entity.LikePosting{}).
+			Where("post_id = ? AND user_id = ?", PostID, UserID).
+			Updates(newValue).Error
+
+		if err != nil {
+			return err
+		}
+
+	} else {
+
+		likePost = entity.LikePosting{
+			PostID:    uint(PostID),
+			UserID:    UserID,
+			Like:      1,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		err := r.db.Create(&likePost).Error
+
+		return err
+	}
+
+	return nil
+}
+
+func (r *postRepository) CheckLike(PostID int, UserID int) bool {
+	var likePost entity.LikePosting
+	err := r.db.Where("post_id = ?", PostID).Where("user_id = ?", UserID).First(&likePost).Error
+	return err == nil
+}
+func (r *postRepository) CheckLikeActive(PostID int, UserID int) bool {
+	var likePost entity.LikePosting
+	err := r.db.Where("post_id = ?", PostID).Where("user_id = ?", UserID).Where("like = ?", 1).First(&likePost).Error
+	return err == nil
 }
