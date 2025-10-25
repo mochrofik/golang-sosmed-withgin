@@ -21,19 +21,33 @@ type PostRequest struct {
 }
 
 type User struct {
-	ID    int    `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Profile string `json:"profile"`
 }
 
 type MyPost struct {
 	ID             int
-	UserID         int           `json:"-"`
-	User           User          `gorm:"foreignKey:UserID" json:"user"`
-	Posting        string        `json:"posting"`
-	UploadPostings []FilePosting `gorm:"foreignKey:PostID" json:"upload_postings"`
-	CreatedAt      string        `json:"created_at"`
-	UpdatedAt      string        `json:"updated_at"`
+	UserID         int                   `json:"-"`
+	User           User                  `gorm:"foreignKey:UserID" json:"user"`
+	Posting        string                `json:"posting"`
+	UploadPostings []FilePosting         `gorm:"foreignKey:PostID" json:"upload_postings"`
+	CreatedAt      string                `json:"created_at"`
+	UpdatedAt      string                `json:"updated_at"`
+	Likes          int                   `json:"likes"`
+	LikePostings   []LikePostingResponse `gorm:"foreignKey:PostID" json:"like_postings"`
+	IsLiked        bool                  `json:"is_liked"`
+}
+
+type LikePostingResponse struct {
+	ID        int
+	UserID    int  `gorm:"type:integer" json:"-"`
+	User      User `gorm:"foreignKey:user_id" json:"user"`
+	Like      int
+	Dislike   int
+	CreatedAt string
+	UpdatedAt string
 }
 
 type FilePosting struct {

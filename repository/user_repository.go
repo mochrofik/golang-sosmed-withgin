@@ -63,7 +63,9 @@ func (r *userRepository) EditProfile(user *entity.User) error {
 	r.db.First(&userData, user.ID)
 
 	userData.Name = user.Name
-	userData.Profile = user.Profile
+	if user.Profile != "" {
+		userData.Profile = user.Profile
+	}
 
 	result := r.db.Save(&userData).Error
 	// result := r.db.First(&user, "id", user.ID).Updates(entity.User{Name: user.Name, Profile: user.Profile}).Error

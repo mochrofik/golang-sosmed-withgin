@@ -16,8 +16,9 @@ type PostRepository interface {
 	UploadFiles(req *entity.UploadPosting) error
 	MyPost(userId int) *[]entity.Post
 	DeletePost(ID int) error
-	LikePost(PostID int, UserID int, isLike bool) error
-	CheckLike(PostID int, UserID int) bool
+	LikePost(PostID int, UserID int, isLike bool, to int) error
+	CheckLike(PostID int, UserID int) (int, error)
+	CheckLikeActive(PostID int, UserID int, like int) error
 }
 
 type postRepository struct {
@@ -55,7 +56,7 @@ func (r *postRepository) MyPost(userId int) *[]entity.Post {
 
 	var posting []entity.Post
 
-	r.db.Preload("UploadPostings").Joins("User").Find(&posting, "user_id", userId)
+	r.db.Preload("UploadPostings").Preload("LikePostings").Joins("User").Find(&posting, "user_id", userId)
 
 	return &posting
 }
@@ -97,24 +98,25 @@ func (r *postRepository) DeletePost(ID int) error {
 
 }
 
-func (r *postRepository) LikePost(PostID int, UserID int, isLike bool) error {
+func (r *postRepository) LikePost(PostID int, UserID int, isLike bool, to int) error {
 	var likePost entity.LikePosting
 
 	if !isLike {
-		newValue := map[string]interface{}{
-			"like":       0,
-			"dislike":    0,
-			"updated_at": time.Now()}
-		err := r.db.Model(&entity.LikePosting{}).
-			Where("post_id = ? AND user_id = ?", PostID, UserID).
-			Updates(newValue).Error
 
-		if err != nil {
-			return err
+		var existingLike entity.LikePosting
+
+		result := r.db.Where("post_id = ? AND user_id = ?", PostID, UserID).First(&existingLike)
+
+		if result.Error == nil {
+			newLikeStatus := 1
+			if existingLike.Like == 1 {
+				newLikeStatus = 0
+			}
+			return r.db.Model(&existingLike).Update("like", newLikeStatus).Error
 		}
+		return result.Error
 
 	} else {
-
 		likePost = entity.LikePosting{
 			PostID:    uint(PostID),
 			UserID:    UserID,
@@ -127,16 +129,17 @@ func (r *postRepository) LikePost(PostID int, UserID int, isLike bool) error {
 		return err
 	}
 
-	return nil
 }
 
-func (r *postRepository) CheckLike(PostID int, UserID int) bool {
+func (r *postRepository) CheckLike(PostID int, UserID int) (int, error) {
 	var likePost entity.LikePosting
 	err := r.db.Where("post_id = ?", PostID).Where("user_id = ?", UserID).First(&likePost).Error
-	return err == nil
+
+	return likePost.Like, err
 }
-func (r *postRepository) CheckLikeActive(PostID int, UserID int) bool {
+func (r *postRepository) CheckLikeActive(PostID int, UserID int, like int) error {
 	var likePost entity.LikePosting
-	err := r.db.Where("post_id = ?", PostID).Where("user_id = ?", UserID).Where("like = ?", 1).First(&likePost).Error
-	return err == nil
+
+	err := r.db.Where("post_id = ?", PostID).Where("user_id = ?", UserID).Where("like = ?", like).First(&likePost).Error
+	return err
 }

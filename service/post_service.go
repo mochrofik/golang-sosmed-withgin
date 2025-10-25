@@ -13,6 +13,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 const uploadDir = "./storage/images/"
@@ -126,7 +129,25 @@ func (s *postService) MyPost(userID int) *[]dto.MyPost {
 	for _, v := range *result {
 
 		var files []dto.FilePosting
+		var likes []dto.LikePostingResponse
+		var jumlahLike int = 0
+		var isLiked bool = false
+		for _, like := range v.LikePostings {
+			if like.Like == 1 {
+				jumlahLike++
+			}
 
+			likes = append(likes, dto.LikePostingResponse{
+				ID:        like.ID,
+				Like:      like.Like,
+				CreatedAt: helper.FormatDateTimeToString(like.CreatedAt),
+				UpdatedAt: helper.FormatDateTimeToString(like.UpdatedAt),
+				User: dto.User{
+					ID: like.UserID,
+				},
+			})
+
+		}
 		for _, file := range v.UploadPostings {
 
 			files = append(files, dto.FilePosting{
@@ -136,18 +157,30 @@ func (s *postService) MyPost(userID int) *[]dto.MyPost {
 			})
 		}
 
+		intLiked, _ := s.repository.CheckLike(v.ID, userID)
+
+		if intLiked == 1 {
+			isLiked = true
+		} else {
+			isLiked = false
+		}
+
 		post = append(post, dto.MyPost{
 			ID:             v.ID,
 			Posting:        v.Posting,
 			UploadPostings: files,
 			UserID:         v.UserID,
 			User: dto.User{
-				ID:    v.UserID,
-				Name:  v.User.Name,
-				Email: v.User.Email,
+				ID:      v.UserID,
+				Name:    v.User.Name,
+				Email:   v.User.Email,
+				Profile: v.User.Profile,
 			},
-			CreatedAt: helper.FormatDateTimeToString(v.CreatedAt),
-			UpdatedAt: helper.FormatDateTimeToString(v.UpdatedAt),
+			LikePostings: likes,
+			IsLiked:      isLiked,
+			Likes:        intLiked,
+			CreatedAt:    helper.FormatDateTimeToString(v.CreatedAt),
+			UpdatedAt:    helper.FormatDateTimeToString(v.UpdatedAt),
 		})
 
 	}
@@ -162,13 +195,16 @@ func (s *postService) DeletePost(ID int) error {
 }
 
 func (s *postService) LikePost(PostID int, UserID int) error {
+	logrus.Info("Like post")
 
-	var err error
-	if Exist := s.repository.CheckLike(PostID, UserID); Exist {
-		err = s.repository.LikePost(PostID, UserID, false)
+	_, err := s.repository.CheckLike(PostID, UserID)
+
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		err := s.repository.LikePost(PostID, UserID, true, 0)
+		return err
 	} else {
-		err = s.repository.LikePost(PostID, UserID, true)
+		err := s.repository.LikePost(PostID, UserID, false, 1)
+		return err
 	}
 
-	return err
 }

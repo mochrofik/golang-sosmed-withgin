@@ -93,11 +93,13 @@ func (h *postHandler) LikePost(c *gin.Context) {
 	userID, _ := c.Get("UserID")
 	postID := c.PostForm("post_id")
 
-	logrus.Info("post", postID)
+	logrus.Info("post", postID, userID)
+	logrus.Info("USERid", userID)
 	idInt := userID.(int)
 	postInt, _ := strconv.Atoi(postID)
 
 	post := h.service.LikePost(postInt, idInt)
+	logrus.Info("post service", post)
 	var message string = "Success Like or Unlike"
 
 	var statusCode int = 201

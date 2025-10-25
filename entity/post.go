@@ -9,6 +9,7 @@ type Post struct {
 	Posting        string
 	PictureUrl     *string
 	UploadPostings []UploadPosting `gorm:"foreignKey:PostID"`
+	LikePostings   []LikePosting   `gorm:"foreignKey:PostID"`
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }
