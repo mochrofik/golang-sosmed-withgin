@@ -9,6 +9,7 @@ import (
 
 type UserRepository interface {
 	GetAllUser(req *dto.UserRequest) *[]entity.User
+	GetMyProfile(ID int) *entity.User
 }
 
 type userRepository struct {
@@ -30,8 +31,15 @@ func (r *userRepository) GetAllUser(req *dto.UserRequest) *[]entity.User {
 		search := *req.Search
 		query = query.Where("name LIKE ?", "%"+search+"%").Or("email LIKE ?", "%"+search+"%")
 	}
-	// Eksekusi Find hanya sekali pada query builder yang telah dimodifikasi (atau yang asli jika tidak ada search)
 	query.Find(&users)
 
 	return &users
+}
+
+func (r *userRepository) GetMyProfile(ID int) *entity.User {
+	var user entity.User
+
+	r.db.First(&user, "id = ?", ID)
+
+	return &user
 }

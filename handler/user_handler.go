@@ -57,3 +57,20 @@ func (h *userHandler) GetAllUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
+
+func (h *userHandler) MyProfile(c *gin.Context) {
+
+	userID, _ := c.Get("UserID")
+
+	idInt := userID.(int)
+
+	data := h.service.GetMyProfile(idInt)
+
+	res := helper.Response(dto.ResponseParams{
+		StatusCode: http.StatusOK,
+		Message:    "My Profile",
+		Data:       data,
+	})
+
+	c.JSON(http.StatusOK, res)
+}
