@@ -86,8 +86,12 @@ func (r *postRepository) DeletePost(ID int) error {
 		}
 	}
 
-	resultComments := r.db.Where("post_id = ?", ID).Delete(&entity.UploadPosting{})
+	resultUpload := r.db.Where("post_id = ?", ID).Delete(&entity.UploadPosting{})
+	resultComments := r.db.Where("post_id = ?", ID).Delete(&entity.LikePosting{})
 
+	if resultUpload.Error != nil {
+		return fmt.Errorf("gagal menghapus file: %w", resultUpload.Error)
+	}
 	if resultComments.Error != nil {
 		return fmt.Errorf("gagal menghapus file: %w", resultComments.Error)
 	}
